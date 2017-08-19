@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python
 
 # Copyright 2017 Google Inc. All Rights Reserved.
@@ -108,6 +109,41 @@ class MicrophoneStream(object):
             yield b''.join(data)
 # [END audio_stream]
 
+cmdLists = [
+        #명령어    대답    종료 리턴값
+        [u'끝내자',     '잘가라',       0],
+        [u'안녕',       '오냐',        1],
+        [u'누구냐',     '구글 스피치',   1],
+        [u'이름이 뭐니', '그런 넌',      1],
+        [u'나이는',     '니가 알바 없다', 1],
+        [u'재밌냐',     '재미없다',      1]]
+
+
+"""
+리턴이 1이면 종료
+"""
+def CommandProc(stt):
+    # 문자 양쪽 공백 제거
+    cmd = stt.strip()
+    # 입력 받은 문자 화면에 표시
+    print('나 : ' + cmd.encode('utf-8'))
+
+    # 문자가 unicode인지 확인
+    if type(cmd) is unicode:
+        #명령 리스트와 비교
+        for cmdList in cmdLists:
+            # 같은 유니코드끼린 바로 대입이 가능하다.
+            if cmd == cmdList[0]:
+                #구글 스피치 대답 화면에 표시
+                print ('구글 스피치 : ' + cmdList[1])
+                # 종료 명령 리턴 0이면 종료
+                # 1이면 계속
+                return cmdList[2]
+    # 명령이 없거나
+    # unicode가 아니면 못 알아 들었다고 화면에 표시하고
+    # 계속            
+    print ('구글 스피치 : 무슨 얘기하는 거냐!?')
+    return 1
 
 def listen_print_loop(responses):
     """Iterates through server responses and prints them.
@@ -145,27 +181,33 @@ def listen_print_loop(responses):
         overwrite_chars = ' ' * (num_chars_printed - len(transcript))
 
         if not result.is_final:
+            #### 추가 ### 화면에 인식 되는 동안 표시되는 부분.
+            sys.stdout.write('나 : ')
             sys.stdout.write(transcript + overwrite_chars + '\r')
             sys.stdout.flush()
-
             num_chars_printed = len(transcript)
 
         else:
-            print(transcript + overwrite_chars)
-
-            # Exit recognition if any of the transcribed phrases could be
-            # one of our keywords.
-            if re.search(r'\b(exit|quit)\b', transcript, re.I):
-                print('Exiting..')
-                break
-
+            #### 추가 ### 
+            if CommandProc(transcript) == 0:
+                break;
+            """
+                # 원래 있던 코드는 주석처리
+                print(transcript + overwrite_chars)
+                # Exit recognition if any of the transcribed phrases could be
+                # one of our keywords.
+                if re.search(r'\b(exit|quit)\b', transcript, re.I):
+                    print('Exiting..')
+                    break
+            """
             num_chars_printed = 0
 
 
 def main():
     # See http://g.co/cloud/speech/docs/languages
     # for a list of supported languages.
-    language_code = 'en-US'  # a BCP-47 language tag
+    #language_code = 'en-US'  # a BCP-47 language tag
+    language_code = 'ko-KR'  # 한국어로 변경
 
     client = speech.SpeechClient()
     config = types.RecognitionConfig(
